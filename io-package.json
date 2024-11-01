@@ -66,7 +66,7 @@
         "tier": 3,
         "mode": "schedule",
         "schedule": "5 * * * *",
-        "type": "general",
+        "type": "date-and-time",
         "compact": true,
         "adminUI": {
             "config": "materialize",
