@@ -63,6 +63,7 @@ class WasteCollectionErding extends utils.Adapter {
 		try {
 			callback();
 		} catch (e) {
+			this.log.warn(`adapter unload failed: ${e}`);
 			callback();
 		}
 	}
