@@ -1,0 +1,33 @@
+{
+    "cli": true,
+    "target": "directory",
+    "adapterName": "waste-collection-erding",
+    "description": "Adapter für Müllabfuhr im Landkreis Erding",
+    "authorName": "Sickboy78",
+    "authorGithub": "Sickboy78",
+    "authorEmail": "asmoday_666@gmx.de",
+    "gitRemoteProtocol": "HTTPS",
+    "dependabot": "yes",
+    "license": "MIT License",
+    "releaseScript": "yes",
+    "gitCommit": "no",
+    "defaultBranch": "main",
+    "startMode": "daemon",
+    "features": [
+        "adapter"
+    ],
+    "connectionIndicator": "no",
+    "type": "general",
+    "adminFeatures": [],
+    "adminUi": "json",
+    "tabReact": "no",
+    "language": "JavaScript",
+    "title": "Waste Collection Erding",
+    "tools": [
+        "ESLint",
+        "type checking"
+    ],
+    "indentation": "Space (4)",
+    "quotes": "single",
+    "creatorVersion": "2.6.5"
+}

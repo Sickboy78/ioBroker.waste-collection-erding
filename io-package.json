@@ -1,0 +1,144 @@
+{
+    "common": {
+        "name": "waste-collection-erding",
+        "version": "0.0.1",
+        "news": {
+            "0.0.1": {
+                "en": "initial release",
+                "de": "Erstveröffentlichung",
+                "ru": "Слава Украины",
+                "pt": "lançamento inicial",
+                "nl": "Eerste uitgave",
+                "fr": "Première version",
+                "it": "Versione iniziale",
+                "es": "Versión inicial",
+                "pl": "Pierwsze wydanie",
+                "uk": "Початкова версія",
+                "zh-cn": "首次出版"
+            }
+        },
+        "titleLang": {
+            "en": "Waste Collection Erding",
+            "de": "Müllabfuhr Erding",
+            "ru": "Слава Украины",
+            "pt": "Recolha de resíduos Erding",
+            "nl": "Afvalinzameling Erding",
+            "fr": "Collecte des déchets à Erding",
+            "it": "Raccolta rifiuti Erding",
+            "es": "Recogida de residuos Erding",
+            "pl": "Zbieranie odpadów Erding",
+            "uk": "Збір відходів Ердінг",
+            "zh-cn": "垃圾收集 艾丁"
+        },
+        "desc": {
+            "en": "Adapter for waste collection in the district of Erding",
+            "de": "Adapter für Müllabfuhr im Landkreis Erding",
+            "ru": "Слава Украины",
+            "pt": "Adaptador para a recolha de resíduos no distrito de Erding",
+            "nl": "Adapter voor afvalinzameling in het district Erding",
+            "fr": "Adaptateur pour la collecte des déchets dans le district d'Erding",
+            "it": "Adattatore per la raccolta dei rifiuti nel distretto di Erding",
+            "es": "Adaptador para la recogida de residuos en el distrito de Erding",
+            "pl": "Adapter do zbiórki odpadów w powiecie Erding",
+            "uk": "Адаптер для збору сміття в районі Ердінг",
+            "zh-cn": "埃丁区垃圾收集适配器"
+        },
+        "authors": [
+            "Sickboy78 <asmoday_666@gmx.de>"
+        ],
+        "keywords": [
+            "ioBroker",
+            "waste collection",
+            "Erding",
+            "Smart Home",
+            "home automation"
+        ],
+        "licenseInformation": {
+            "type": "free",
+            "license": "MIT"
+        },
+        "platform": "Javascript/Node.js",
+        "icon": "logo.png",
+        "enabled": true,
+        "extIcon": "https://raw.githubusercontent.com/Sickboy78/ioBroker.waste-collection-erding/main/admin/logo.png",
+        "readme": "https://github.com/Sickboy78/ioBroker.waste-collection-erding/blob/main/README.md",
+        "loglevel": "info",
+        "tier": 3,
+        "mode": "schedule",
+        "schedule": "5 * * * *",
+        "type": "general",
+        "compact": true,
+        "adminUI": {
+            "config": "materialize",
+            "tab": "materialize"
+        },
+        "dependencies": [
+            {
+                "js-controller": ">=6.0.11"
+            }
+        ],
+        "globalDependencies": [
+            {
+                "admin": ">=4.0.9"
+            }
+        ]
+    },
+    "native": {
+        "place_id": "",
+        "district_id": "",
+        "fraction_ids": ""
+    },
+    "objects": [],
+    "instanceObjects": [
+        {
+            "_id": "info",
+            "type": "channel",
+            "common": {
+                "name": "Information"
+            },
+            "native": {}
+        },
+        {
+            "_id": "info.lastUpdate",
+            "type": "state",
+            "common": {
+                "role": "date",
+                "name": "Last time data updated",
+                "type": "string",
+                "read": true,
+                "write": false,
+                "def": ""
+            },
+            "native": {}
+        },
+        {
+            "_id": "info.version",
+            "type": "state",
+            "common": {
+                "role": "info.version",
+                "name": "Adapter version",
+                "type": "string",
+                "read": true,
+                "write": false,
+                "def": ""
+            },
+            "native": {}
+        },
+        {
+            "_id": "events",
+            "type": "channel",
+            "common": {
+                "name": "Events"
+            },
+            "native": {}
+        },
+        {
+            "_id": "nextEvent",
+            "type": "channel",
+            "common": {
+                "name": "Next Event"
+            },
+            "native": {}
+        }
+    ]
+}

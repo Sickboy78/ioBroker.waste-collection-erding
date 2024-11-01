@@ -1,0 +1,512 @@
+<html>
+
+<head>
+
+    <!-- Load ioBroker scripts and styles-->
+    <link rel="stylesheet" type="text/css" href="../../css/adapter.css" />
+    <link rel="stylesheet" type="text/css" href="../../lib/css/materialize.css">
+
+    <script type="text/javascript" src="../../lib/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="../../socket.io/socket.io.js"></script>
+
+    <script type="text/javascript" src="../../js/translate.js"></script>
+    <script type="text/javascript" src="../../lib/js/materialize.js"></script>
+    <script type="text/javascript" src="../../js/adapter-settings.js"></script>
+
+    <!-- Load our own files -->
+    <link rel="stylesheet" type="text/css" href="style.css" />
+    <script type="text/javascript" src="words.js"></script>
+
+    <script type="text/javascript">
+		// This will be called by the admin adapter when the settings page loads
+		// eslint-disable-next-line no-unused-vars
+		function load(settings, onChange) {
+			// eslint-disable-next-line no-undef
+			socket.emit('getObject', 'system.config', function () {
+				loadHelper(settings, onChange);
+			});
+
+			onChange(false);
+		}
+
+		/**
+         * start loading data and restore saved settings
+         *
+		 * @param settings
+		 * @param onChange
+		 */
+		function loadHelper(settings, onChange) {
+			// example: select elements with id=key and class=value and insert value
+			if (!settings) return;
+
+			if(settings.place_id) {
+				$('#places').data('settings_place_id', settings.place_id);
+            }
+			if(settings.district_id) {
+				$('#districts').data('settings_district_id', settings.district_id);
+			}
+			if(settings.fraction_ids) {
+				$('#fractions').data('settings_fraction_ids', settings.fraction_ids);
+			}
+
+			$('#places').on('change', () => onPlaceChange());
+			$('#districts').on('change', () => onDistrictChange());
+
+			getCustomerPlacesFromApi()
+                .then(places => fillPlacesDropDown(places))
+                .then(() => restoreSavedPlacesSettings())
+				.catch(error => {
+					$('div.input-field').addClass('red-border');
+					showError(error);
+				});
+
+			$('.value').each(function () {
+				const $key = $(this);
+				const id = $key.attr('id');
+                // do not call onChange direct, because onChange could expect some arguments
+                $key.val(settings[id])
+                    .on('change', () => onChange())
+                    .on('keyup', () => onChange());
+			});
+
+			onChange(false);
+			// reinitialize all the Materialize labels on the page if you are dynamically adding inputs:
+			// eslint-disable-next-line no-undef
+			if (M) M.updateTextFields();
+		}
+
+		/**
+         * restore saved places settings
+         *
+		 * @returns {Promise<void>}
+		 */
+		function restoreSavedPlacesSettings() {
+			return new Promise((resolve, reject) => {
+				const settings_place_id = $('#places').data('settings_place_id');
+				if(settings_place_id && $("#places option[value='" + settings_place_id + "']").length !== 0) {
+					$("#places option[value='" + settings_place_id + "']").prop('selected', true);
+					if (M) M.FormSelect.init($('#places').get()[0]);
+					getCustomerPlaceDistrictsFromApi(settings_place_id)
+						.then(districts => fillDistrictsDropDown(districts))
+                        .then(() => restoreSavedDistrictsSettings(settings_place_id))
+						.catch(error => {
+							return reject(error);
+						});
+					return resolve();
+				} else  {
+					return resolve();
+				}
+
+			});
+		}
+
+		/**
+         * restore saved districts settings
+         *
+ 		 * @param {string} placeId
+		 * @returns {Promise<void>}
+		 */
+        function restoreSavedDistrictsSettings(placeId) {
+			return new Promise((resolve, reject) => {
+				const settings_district_id = $('#districts').data('settings_district_id');
+				if(settings_district_id && $("#districts option[value='" + settings_district_id + "']").length !== 0) {
+					$("#districts option[value='" + settings_district_id + "']").prop('selected', true);
+					if (M) M.FormSelect.init($('#districts').get()[0]);
+					getCustomerFractionsFromApi(placeId, settings_district_id)
+						.then(fractions => fillFractionsInput(fractions))
+						.catch(error => {
+							return reject(error);
+						});
+					return resolve();
+				} else  {
+					return resolve();
+				}
+
+			});
+		}
+
+		/**
+		 * on place change reset and get districts
+		 */
+		function onPlaceChange() {
+			console.log('onPlaceChanged called');
+			$('#result').empty();
+			resetDistrictsDropDown();
+			resetFractionsInput();
+			const placeId = $('#places').find(":selected").val();
+			if(placeId !== '-1' && placeId !== '0') {
+				getCustomerPlaceDistrictsFromApi(placeId)
+					.then(districts => fillDistrictsDropDown(districts))
+					.catch(error => {
+						$('div.input-field').addClass('red-border');
+						showError(error);
+					});
+            }
+		}
+
+		/**
+         * on district change reset and get fractions
+		 */
+		function onDistrictChange() {
+			console.log('onDistrictChanged called');
+			$('#result').empty();
+			resetFractionsInput();
+			const placeId = $('#places').find(":selected").val();
+			const districtId = $('#districts').find(":selected").val();
+			if(placeId !== '-1' && placeId !== '0' && districtId !== '-1' && districtId !== '0') {
+				getCustomerFractionsFromApi(placeId, districtId)
+					.then(fractions => fillFractionsInput(fractions))
+					.catch(error => {
+						$('div.input-field').addClass('red-border');
+						showError(error);
+					});
+			}
+		}
+
+		/**
+		 * get places
+         *
+		 * @return {Promise<Object>} Promise of places
+		 */
+		function getCustomerPlacesFromApi() {
+			return new Promise((resolve, reject) => {
+				const options = buildOptions('portal.awido.de','/api/Customer/GetCustomerPlaces');
+				httpRequest(options).then(result => {
+					if (result === undefined) {
+						return reject(new Error(`Getting places failed.`));
+					} else {
+						return resolve(result);
+					}
+				}).catch(error => {
+					return reject(error);
+				});
+			});
+		}
+
+		/**
+		 * get districts for place
+         *
+		 * @return {Promise<Object>} Promise of districts
+		 */
+		function getCustomerPlaceDistrictsFromApi(placeId) {
+			return new Promise((resolve, reject) => {
+				const options = buildOptions('portal.awido.de','/api/Customer/GetCustomerPlaceDistricts?placeId=' + placeId);
+				httpRequest(options).then(result => {
+					if (result === undefined) {
+						return reject(new Error(`Getting districts failed.`));
+					} else {
+						return resolve(result);
+					}
+				}).catch(error => {
+					return reject(error);
+				});
+			});
+		}
+
+		/**
+		 * get fractions for place and district
+         *
+		 * @return {Promise<Object>} Promise of fractions
+		 */
+		function getCustomerFractionsFromApi(placeId, districtId) {
+			return new Promise((resolve, reject) => {
+				const options = buildOptions('portal.awido.de','/api/Customer/GetCustomerFractions?placeId=' + placeId + '&districtId' + districtId);
+				httpRequest(options).then(result => {
+					if (result === undefined) {
+						return reject(new Error(`Getting fractions failed.`));
+					} else {
+						return resolve(result);
+					}
+				}).catch(error => {
+					return reject(error);
+				});
+			});
+		}
+
+		/**
+         * fill the places dropdown
+         *
+		 * @param places an array of places
+		 * @returns {Promise<void>}
+		 */
+		function fillPlacesDropDown(places) {
+			return new Promise((resolve, reject) => {
+				if (!places || !Array.isArray(places) || places.length === 0) {
+					return reject(new Error(`Getting places from API failed.`));
+				} else {
+					console.log('got ' + places.length + ' places');
+					$("#places").data('loading-title',$("#places option[value='-1']").text());
+					$("#places option[value='-1']").remove();
+					places.forEach(place => {
+						$('#places').append($('<option>', {
+							value: place.placeId,
+							text: place.placeName
+						}));
+					});
+					$("#places").prop('disabled', false);
+					if (M) M.FormSelect.init($('#places').get()[0]);
+					return resolve();
+				}
+			});
+		}
+
+		/**
+		 * reset the district dropdown
+		 */
+		function resetDistrictsDropDown() {
+			console.log('removing districts from districts dropdown');
+			$("#districts").children().each((i,district) => {
+				if($(district).val() !== '-1' && $(district).val() !== '0' ) {
+					$(district).remove();
+                }
+            });
+			if($("#districts option[value='-1']").length === 0 ) {
+				console.log('adding loading ... to districts dropdown');
+				$("#districts").prepend($('<option>', {
+					value: '-1',
+					text: $("#districts").data('loading-title'),
+                    selected: true
+				}));
+			}
+			console.log('disable districts dropdown');
+            $("#districts").prop('disabled', true);
+            if (M) M.FormSelect.init($('#districts').get()[0]);
+		}
+
+		/**
+         * fill the district dropdown
+         *
+		 * @param districts an array of districts
+		 * @returns {Promise<void>}
+		 */
+		function fillDistrictsDropDown(districts) {
+			return new Promise((resolve, reject) => {
+				if (!districts || !Array.isArray(districts) || districts.length === 0) {
+					return reject(new Error(`Getting districts from API failed.`));
+				} else {
+					console.log('got ' + districts.length + ' districts');
+					$("#districts").data('loading-title',$("#districts option[value='-1']").text());
+					$("#districts option[value='-1']").remove();
+					districts.forEach(district => {
+						$('#districts').append($('<option>', {
+							value: district.districtId,
+							text: district.districtName
+						}));
+					});
+					$("#districts").prop('disabled', false);
+					if (M) M.FormSelect.init($('#districts').get()[0]);
+					return resolve();
+				}
+			});
+		}
+
+		/**
+         * reset the fraction input field and fraction images
+		 */
+		function resetFractionsInput() {
+            $('#fraction_images').empty();
+            $('#fractions').val('');
+            if (M) M.updateTextFields();
+		}
+
+		/**
+         * fill the fraction input field and fraction images
+         *
+		 * @param fractions an array of fractions
+		 * @returns {Promise<void>}
+		 */
+		function fillFractionsInput(fractions) {
+			return new Promise((resolve, reject) => {
+				if (!fractions || !Array.isArray(fractions) || fractions.length === 0) {
+					return reject(new Error(`Getting fractions from API failed.`));
+				} else {
+					console.log('got ' + fractions.length + ' fractions');
+					const imageWidth = Math.round(100/fractions.length) + '%';
+					let fractionsText = '[';
+					fractions.forEach(fraction => {
+						if(fractionsText !== '[') {
+							fractionsText += ',';
+						}
+						fractionsText += '"' + fraction.fractionId + '"';
+						const elem = $('<img>', {
+							id: 'fraction_image_' + fraction.fractionId,
+							src: fraction.fractionIcon,
+							title: fraction.fractionName,
+							alt: fraction.fractionName
+						});
+						elem.css('max-width', imageWidth);
+						elem.css('max-height', '80px');
+						$('#fraction_images').append(elem);
+					});
+					fractionsText += ']';
+					$('#fractions').val(fractionsText);
+					if (M) M.updateTextFields();
+					return resolve();
+				}
+			});
+		}
+
+		/**
+		 * build an options JSon object for a http request
+         *
+		 * @param {string} host
+		 * @param {string} path
+		 * @return {object}
+		 */
+		function buildOptions(host, path) {
+			return {
+				url: 'https://' + host + path,
+				method: 'GET',
+				contentType: 'application/json;charset=utf-8',
+				headers: {
+					'Accept' : 'application/json, text/plain, */*',
+			        'Accept-Language' : 'en-US,en;q=0.9',
+					'Cache-Control' : 'no-cache',
+			        'Connection' : 'keep-alive',
+					'Customer' :  'erding',
+					'Host' : host,
+					'Origin' : 'https://portal.awido.de',
+			        'Referer' : 'https://portal.awido.de/',
+					'Sec-Fetch-Dest' : 'empty',
+			        'Sec-Fetch-Mode' : 'cors',
+			        'Sec-Fetch-Site' : 'cross-site',
+					'User-Agent' : 'ioBroker/7.0',
+					'X-Requested-With' : 'com.webapp.erding'
+				}
+			};
+		}
+
+		/**
+		 * do a http request
+         *
+		 * @param {object} options
+		 * @return {Promise<Object>} Promise of an response JSon object
+		 */
+		function httpRequest(options) {
+			return new Promise((resolve, reject) => {
+				$.ajax(options).done(data => {
+					if(data instanceof Object) {
+						return resolve(data);
+					} else {
+						return reject(new Error(`Json parse error in returned data.`));
+					}
+				}).fail(error => {
+					return reject(error);
+				});
+			});
+		}
+
+		/**
+		 * show an error message box
+         *
+		 * @param {object} error
+		 */
+		function showError(error) {
+			let errorText = error.toString();
+			if(error instanceof Object) {
+				// eslint-disable-next-line no-prototype-builtins
+				if(error.hasOwnProperty('status') && error.hasOwnProperty('statusText') && error.hasOwnProperty('responseText')) {
+					errorText = error.status.toString() + ' - ' + error.statusText + ' - ' + error.responseText;
+				}
+			}
+			const div = $('<div>',{
+				class: 'message-box',
+				style: 'display: none;'
+			});
+			const title = $('<p>',{
+				class: 'title',
+				text: 'An error occured'
+			});
+			const text = $('<p>',{
+				text: errorText
+			});
+			title.appendTo(div);
+			text.appendTo(div);
+
+			$('#result').empty();
+			div.appendTo($('#result'));
+			div.show('slow');
+		}
+
+		// This will be called by the admin adapter when the user presses the save button
+		// eslint-disable-next-line no-unused-vars
+		function save(callback) {
+			// example: select elements with class=value and build settings object
+			const obj = {};
+			const settings = {};
+			$('.value').each(function () {
+				const $this = $(this);
+				const id = $this.attr('id');
+                if(id === 'places') {
+                    obj['place_id'] = $this.val();
+                } else if(id === 'districts') {
+                    obj['district_id'] = $this.val();
+                } else if(id === 'fractions') {
+                    obj['fraction_ids'] = $this.val();
+                }
+			});
+
+			if(!obj['place_id'] || obj['place_id'] === '-1' || obj['place_id'] === '0') {
+				showError(new Error(`No place selected.`));
+				return;
+            }
+			if(!obj['district_id'] || obj['district_id'] === '-1' || obj['district_id'] === '0') {
+				showError(new Error(`No district selected.`));
+				return;
+			}
+			if(!obj['fraction_ids'] || obj['fraction_ids'] === '') {
+				showError(new Error(`No valid collections found.`));
+				return;
+			}
+
+			callback(obj);
+		}
+
+    </script>
+
+</head>
+
+<body>
+
+    <div class="m adapter-container">
+        <div class="row">
+            <!-- Forms are the standard way to receive user inputted data.
+             Learn more http://materializecss.com/forms.html-->
+            <div class="row">
+                <div class="input-field col s6">
+                    <img src="logo.png" class="logo">
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s12 m6 l4">
+                    <select class="value" id="places" disabled>
+                        <option value="-1" class="translate">loading ...</option>
+                        <option value="0" class="translate">select place</option>
+                    </select>
+                    <label for="places" class="translate">places</label>
+                </div>
+                <div class="input-field col s12 m6 l4">
+                    <select class="value" id="districts" disabled>
+                        <option value="-1" class="translate">loading ...</option>
+                        <option value="0" class="translate">select district</option>
+                    </select>
+                    <label for="districts" class="translate">districts</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s12 m6 l4">
+                    <input class="value" id="fractions" type="text" readonly/>
+                    <label for="fractions" class="translate">collections</label>
+                    <div id="fraction_images"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row" id="result">
+        </div>
+
+    </div>
+
+</body>
+
+</html>
