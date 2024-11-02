@@ -1,6 +1,6 @@
 {
   "name": "iobroker.waste-collection-erding",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Adapter for waste collection in Erding",
   "author": {
     "name": "Sickboy78",

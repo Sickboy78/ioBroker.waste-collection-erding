@@ -1,8 +1,21 @@
 {
     "common": {
         "name": "waste-collection-erding",
-        "version": "0.0.1",
+        "version": "0.0.2",
         "news": {
+            "0.0.2": {
+                "en": "initial release",
+                "de": "Erstveröffentlichung",
+                "ru": "Слава Украины",
+                "pt": "lançamento inicial",
+                "nl": "Eerste uitgave",
+                "fr": "Première version",
+                "it": "Versione iniziale",
+                "es": "Versión inicial",
+                "pl": "Pierwsze wydanie",
+                "uk": "Початкова версія",
+                "zh-cn": "首次出版"
+            },
             "0.0.1": {
                 "en": "initial release",
                 "de": "Erstveröffentlichung",

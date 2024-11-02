@@ -25,6 +25,10 @@ It shows all collections under events and only the next one of each type under n
 
 ## Changelog
 
+### 0.0.2 (2024-11-02)
+
+* (Sickboy78) initial release
+
 ### 0.0.1 (2024-11-01)
 
 * (Sickboy78) initial release

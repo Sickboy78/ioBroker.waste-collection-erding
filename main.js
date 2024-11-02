@@ -11,7 +11,7 @@ const utils = require('@iobroker/adapter-core');
 // Load your modules here
 const https = require('https');
 
-const ADAPTER_VERSION = '0.0.1';
+const ADAPTER_VERSION = '0.0.2';
 const REQUEST_TIMEOUT = 120000;
 const CHANNEL_EVENTS = 'events';
 const CHANNEL_INFO = 'info';
