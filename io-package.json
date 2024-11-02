@@ -47,11 +47,8 @@
             "Sickboy78 <asmoday_666@gmx.de>"
         ],
         "keywords": [
-            "ioBroker",
             "waste collection",
-            "Erding",
-            "Smart Home",
-            "home automation"
+            "Erding"
         ],
         "licenseInformation": {
             "type": "free",
@@ -67,6 +64,8 @@
         "mode": "schedule",
         "schedule": "5 * * * *",
         "type": "date-and-time",
+        "connectionType": "cloud",
+        "dataSource": "poll",
         "compact": true,
         "adminUI": {
             "config": "materialize",
